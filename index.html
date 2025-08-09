@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Ultimate Secure Group Chat</title>
+  <style>
+    body { font-family:'Segoe UI',Arial,sans-serif; background:#ece5dd; margin:0; }
+    .wrapper { display:flex; justify-content:center; gap:10px; padding:10px; }
+    #online-panel { width:150px; background:#f9f9f9; border:1px solid #ccc; border-radius:6px; min-height:500px; }
+    #online-panel h4 { margin:6px; background:#eee; padding:5px; font-size:15px; text-align:center; }
+    #online-users { padding:6px; font-size:13px; }
+    .user-entry { display:flex; align-items:center; margin-bottom:6px; border-bottom:1px solid #ddd; padding:3px 0; gap:5px; }
+    .user-entry img { width:28px; height:28px; border-radius:50%; }
+    #chat-container { width:375px; box-shadow:0 0 16px #ccc; border-radius:8px; background:#fff; overflow:hidden; }
+    #chat-title { background:#075e54; color:white; padding:10px; font-size:18px; text-align:center; }
+    :root { --self-bubble-grad:linear-gradient(#dcf8c6,#ffffff); }
+    .theme-light #chat-box { background:#ece5dd; color:#000; }
+    .theme-dark #chat-box { background:#181818; color:#f0f0f0; }
+    .theme-blue #chat-box { background:#cce7ff; color:#003366; }
+    .theme-pink #chat-box { background:#ffe0f0; color:#660033; }
+    #chat-container.custom-bg #chat-box { background-size:cover; background-repeat:no-repeat; background-position:center; }
+    #group-bar,#theme-selector,#group-members,#search-bar { padding:6px; background:#fafafa; font-size:14px; border-bottom:1px solid #ddd; }
+    #chat-box { height:300px; overflow-y:auto; padding:10px; }
+    .message-row { display:flex; margin-bottom:5px; position:relative; }
+    .bubble { max-width:70%; padding:8px 12px; border-radius:16px; font-size:14px; position:relative; }
+    .bubble.self { background:var(--self-bubble-grad); margin-left:auto; }
+    .bubble.other { background:#fff; margin-right:auto; border:1px solid #dadada; }
+    .username { font-weight:bold; font-size:13px; margin-right:5px; }
+    .time { font-size:11px; color:gray; margin-left:8px; }
+    .ticks { font-size:12px; margin-left:3px; vertical-align:middle; }
+    #input-area { display:flex; gap:4px; padding:8px; background:#fafafa; }
+    #message-input { flex:1; padding:6px; border:1px solid #ccc; border-radius:14px; }
+    button { padding:5px 10px; background:#25d366; color:white; border:none; border-radius:14px; cursor:pointer; font-size:14px; }
+    button:hover { background:#128C7E; }
+    #emoji-picker,#sticker-picker,#gif-picker { display:none; position:absolute; bottom:64px; left:50%; transform:translateX(-50%); background:white; border:1px solid #ccc; padding:5px; border-radius:8px; box-shadow:0 4px 12px #aaa4; flex-wrap:wrap; z-index:5; max-width:320px; }
+    .emoji { cursor:pointer; margin:3px; font-size:20px; }
+    .sticker img,.gif-thumb { width:80px; height:80px; border-radius:8px; cursor:pointer; object-fit:cover; }
+    #gif-search-input { width:90%; padding:5px; margin-bottom:5px; border-radius:6px; border:1px solid #ccc; }
+    .delete-btn,.edit-btn,.pin-btn,.reply-btn { font-size:14px; cursor:pointer; margin-left:8px; }
+    .reaction-bar span { cursor:pointer; font-size:16px; padding:0 2px; }
+    .reply-preview { background:#fff6a1; padding:2px 6px; border-radius:6px; font-size:12px; margin-bottom:6px; }
+    .pinned { border:2px solid #f3c623; }
+    .search-row { background:#bbfbff!important; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div id="online-panel"><h4>Online</h4><div id="online-users"></div></div>
+  <div id="chat-container" class="theme-light">
+    <div id="chat-title">Ultimate Secure Group Chat</div>
+    <div id="group-bar">
+      <label>Group:<select id="group-select"></select></label>
+      <button id="create-group">Create</button>
+      <button id="leave-group">Leave</button>
+    </div>
+    <div id="theme-selector">
+      <label>Theme:<select id="themes">
+        <option value="theme-light">Light</option>
+        <option value="theme-dark">Dark</option>
+        <option value="theme-blue">Blue</option>
+        <option value="theme-pink">Pink</option>
+      </select></label>
+      <input type="file" id="bg-upload" accept="image/*" style="display:none;"><button id="bg-btn">Upload BG</button><button id="bg-reset" style="display:none;">Remove BG</button>
+      <br><br>
+      <label>Font:<select id="font-selector">
+        <option value="'Segoe UI', Arial">Default</option><option value="Arial, sans-serif">Arial</option><option value="'Courier New', monospace">Courier New</option><option value="'Times New Roman', serif">Times New Roman</option><option value="'Comic Sans MS', cursive">Comic Sans</option>
+      </select></label>
+      <br><br>
+      <label>Bubble Gradient:</label><input type="color" id="grad1" value="#dcf8c6"><input type="color" id="grad2" value="#ffffff">
+      <br><br>
+      <label>Avatar:</label><input type="file" id="avatar-upload" accept="image/*" style="display:none;"><button id="avatar-btn">Upload Avatar</button><button id="avatar-reset" style="display:none;">Remove Avatar</button>
+      <br><br>
+      <label>Status:</label><input type="text" id="custom-status" maxlength="32" placeholder="Set your status...">
+    </div>
+    <div id="group-members"></div>
+    <div id="typing-indicator"></div>
+    <div id="chat-box"></div>
+    <div id="input-area">
+      <button id="emoji-btn">😊</button><button id="sticker-btn">🖍️</button><button id="gif-btn">GIF</button>
+      <input type="file" id="file-input" accept="image/*" style="display:none;"><button id="img-btn">🖼️</button><button id="audio-btn" title="Voice note">🎤</button>
+      <input type="text" id="message-input" placeholder="Type a message..."><button id="send-btn">Send</button>
+    </div>
+    <div id="emoji-picker"></div><div id="sticker-picker"></div>
+    <div id="gif-picker"><input type="text" id="gif-search-input" placeholder="Search GIFs..."><div id="gif-results"></div></div>
+    <div id="search-bar"><input type="text" id="search-input" placeholder="Search messages..."><button id="search-btn">Search</button><button id="export-btn">Export</button></div>
+  </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-storage.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
